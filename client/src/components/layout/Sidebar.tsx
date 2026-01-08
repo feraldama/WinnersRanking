@@ -98,6 +98,11 @@ const navigation: NavigationItem[] = [
     icon: <MegaphoneIcon className="h-7 w-6" />,
   },
   {
+    name: "Torneos",
+    href: "/torneos",
+    icon: <MegaphoneIcon className="h-7 w-6" />,
+  },
+  {
     name: "Reportes",
     href: "/reportes",
     icon: <ChartBarIcon className="h-7 w-6" />,

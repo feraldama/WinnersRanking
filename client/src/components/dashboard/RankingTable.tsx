@@ -31,10 +31,17 @@ export default function RankingTable({
   useEffect(() => {
     const loadCompetencias = async () => {
       try {
-        const response = await getCompetencias();
-        setCompetencias(response.data || []);
-        if (response.data && response.data.length > 0) {
-          setCompetenciaSeleccionada(response.data[0].CompetenciaId);
+        // Obtener todas las competencias ordenadas por ID descendente (última primero)
+        const response = await getCompetencias({
+          sortBy: "CompetenciaId",
+          sortOrder: "desc",
+          limit: 1000, // Límite alto para obtener todas las competencias
+        });
+        const competenciasList = response.data || [];
+        setCompetencias(competenciasList);
+        if (competenciasList.length > 0) {
+          // Seleccionar la última competencia cargada (primera en la lista ordenada por ID DESC)
+          setCompetenciaSeleccionada(competenciasList[0].CompetenciaId);
         }
       } catch (error) {
         console.error("Error al cargar competencias:", error);

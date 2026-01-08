@@ -30,6 +30,7 @@ import ReportesPage from "./pages/dashboard/ReportesPage";
 import PartidosPage from "./pages/partidos/PartidosPage";
 import CanchasPage from "./pages/canchas/CanchasPage";
 import CompetenciasPage from "./pages/competencias/CompetenciasPage";
+import TorneosPage from "./pages/torneos/TorneosPage";
 import SucursalesPage from "./pages/sucursales/SucursalesPage";
 
 function App() {
@@ -73,6 +74,7 @@ function App() {
             <Route path="/reportes" element={<ReportesPage />} />
             <Route path="/canchas" element={<CanchasPage />} />
             <Route path="/competencias" element={<CompetenciasPage />} />
+            <Route path="/torneos" element={<TorneosPage />} />
             <Route path="/sucursales" element={<SucursalesPage />} />
           </Route>
 
