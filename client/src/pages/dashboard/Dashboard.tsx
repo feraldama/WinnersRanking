@@ -105,7 +105,7 @@ function Dashboard() {
               <input
                 type="search"
                 id="default-search"
-                className="flex-grow py-4 ps-12 text-sm text-gray-900 border border-gray-100 rounded-l bg-gray-50 focus:ring-blue-500"
+                className="grow py-4 ps-12 text-sm text-gray-900 border border-gray-100 rounded-l bg-gray-50 focus:ring-blue-500"
                 placeholder="Buscar en el sistema..."
                 // style={{ paddingLeft: "35px" }}
                 required
