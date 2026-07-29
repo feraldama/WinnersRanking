@@ -3,17 +3,23 @@ const db = require("../config/db");
 const Cliente = {
   getAll: () => {
     return new Promise((resolve, reject) => {
-      db.query("SELECT * FROM clientes", (err, results) => {
-        if (err) reject(err);
-        resolve(results);
-      });
+      db.query(
+        `SELECT c.*, e.EquipoNombre FROM clientes c
+         LEFT JOIN Equipo e ON c.EquipoId = e.EquipoId`,
+        (err, results) => {
+          if (err) reject(err);
+          resolve(results);
+        }
+      );
     });
   },
 
   getById: (id) => {
     return new Promise((resolve, reject) => {
       db.query(
-        "SELECT * FROM clientes WHERE ClienteId = ?",
+        `SELECT c.*, e.EquipoNombre FROM clientes c
+         LEFT JOIN Equipo e ON c.EquipoId = e.EquipoId
+         WHERE c.ClienteId = ?`,
         [id],
         (err, results) => {
           if (err) return reject(err);
@@ -37,6 +43,8 @@ const Cliente = {
         "UsuarioId",
         "ClienteSexo",
         "ClienteCopa",
+        "EquipoId",
+        "EquipoNombre",
       ];
       const allowedSortOrders = ["ASC", "DESC"];
       const sortField = allowedSortFields.includes(sortBy)
@@ -45,9 +53,12 @@ const Cliente = {
       const order = allowedSortOrders.includes(sortOrder.toUpperCase())
         ? sortOrder.toUpperCase()
         : "ASC";
+      const sortPrefix = sortField === "EquipoNombre" ? "e" : "c";
 
       db.query(
-        `SELECT * FROM clientes ORDER BY ${sortField} ${order} LIMIT ? OFFSET ?`,
+        `SELECT c.*, e.EquipoNombre FROM clientes c
+         LEFT JOIN Equipo e ON c.EquipoId = e.EquipoId
+         ORDER BY ${sortPrefix}.${sortField} ${order} LIMIT ? OFFSET ?`,
         [limit, offset],
         (err, results) => {
           if (err) return reject(err);
@@ -82,6 +93,8 @@ const Cliente = {
         "UsuarioId",
         "ClienteSexo",
         "ClienteCopa",
+        "EquipoId",
+        "EquipoNombre",
       ];
       const allowedSortOrders = ["ASC", "DESC"];
       const sortField = allowedSortFields.includes(sortBy)
@@ -90,33 +103,38 @@ const Cliente = {
       const order = allowedSortOrders.includes(sortOrder.toUpperCase())
         ? sortOrder.toUpperCase()
         : "ASC";
+      const sortPrefix = sortField === "EquipoNombre" ? "e" : "c";
 
       const searchQuery = `
-        SELECT * FROM clientes 
-        WHERE CONCAT(ClienteNombre, ' ', ClienteApellido) LIKE ? 
-        OR ClienteRUC LIKE ? 
-        OR ClienteId LIKE ?
-        ORDER BY ${sortField} ${order}
+        SELECT c.*, e.EquipoNombre FROM clientes c
+        LEFT JOIN Equipo e ON c.EquipoId = e.EquipoId
+        WHERE CONCAT(c.ClienteNombre, ' ', c.ClienteApellido) LIKE ?
+        OR c.ClienteRUC LIKE ?
+        OR c.ClienteId LIKE ?
+        OR e.EquipoNombre LIKE ?
+        ORDER BY ${sortPrefix}.${sortField} ${order}
         LIMIT ? OFFSET ?
       `;
       const searchValue = `%${term}%`;
 
       db.query(
         searchQuery,
-        [searchValue, searchValue, searchValue, limit, offset],
+        [searchValue, searchValue, searchValue, searchValue, limit, offset],
         (err, results) => {
           if (err) return reject(err);
 
           const countQuery = `
-            SELECT COUNT(*) as total FROM clientes 
-            WHERE CONCAT(ClienteNombre, ' ', ClienteApellido) LIKE ? 
-            OR ClienteRUC LIKE ? 
-            OR ClienteId LIKE ?
+            SELECT COUNT(*) as total FROM clientes c
+            LEFT JOIN Equipo e ON c.EquipoId = e.EquipoId
+            WHERE CONCAT(c.ClienteNombre, ' ', c.ClienteApellido) LIKE ?
+            OR c.ClienteRUC LIKE ?
+            OR c.ClienteId LIKE ?
+            OR e.EquipoNombre LIKE ?
           `;
 
           db.query(
             countQuery,
-            [searchValue, searchValue, searchValue],
+            [searchValue, searchValue, searchValue, searchValue],
             (err, countResult) => {
               if (err) return reject(err);
 
@@ -144,8 +162,9 @@ const Cliente = {
           ClienteCategoria,
           UsuarioId,
           ClienteSexo,
-          ClienteCopa
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ClienteCopa,
+          EquipoId
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const values = [
         clienteData.ClienteRUC || "",
@@ -160,6 +179,7 @@ const Cliente = {
         typeof clienteData.ClienteCopa === "number"
           ? clienteData.ClienteCopa
           : 0,
+        clienteData.EquipoId || null,
       ];
       db.query(query, values, (err, result) => {
         if (err) return reject(err);
@@ -183,6 +203,7 @@ const Cliente = {
         "UsuarioId",
         "ClienteSexo",
         "ClienteCopa",
+        "EquipoId",
       ];
       camposActualizables.forEach((campo) => {
         if (clienteData[campo] !== undefined) {
@@ -204,14 +225,7 @@ const Cliente = {
         if (result.affectedRows === 0) {
           return resolve(null);
         }
-        db.query(
-          "SELECT * FROM clientes WHERE ClienteId = ?",
-          [id],
-          (err, results) => {
-            if (err) return reject(err);
-            resolve(results.length > 0 ? results[0] : null);
-          }
-        );
+        Cliente.getById(id).then(resolve).catch(reject);
       });
     });
   },

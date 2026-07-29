@@ -5,6 +5,8 @@ import DataTable from "../common/Table/DataTable";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { TrophyIcon } from "@heroicons/react/24/solid";
 import { useAuth } from "../../contexts/useAuth";
+import { getEquipos } from "../../services/equipo.service";
+import type { Equipo } from "../../services/equipo.service";
 
 interface Cliente {
   id: string | number;
@@ -19,6 +21,8 @@ interface Cliente {
   ClienteSexo?: "M" | "F" | "";
   UsuarioId: string;
   ClienteCopa?: number;
+  EquipoId?: string | number | null;
+  EquipoNombre?: string | null;
   [key: string]: unknown;
 }
 
@@ -76,15 +80,31 @@ export default function CustomersList({
     ClienteSexo: "",
     UsuarioId: "",
     ClienteCopa: 0,
+    EquipoId: "",
   });
+  const [equipos, setEquipos] = useState<Equipo[]>([]);
 
   const { user } = useAuth();
+
+  // Cargar equipos para el selector
+  useEffect(() => {
+    const loadEquipos = async () => {
+      try {
+        const response = await getEquipos();
+        setEquipos(response.data || []);
+      } catch (error) {
+        console.error("Error al cargar equipos:", error);
+      }
+    };
+    loadEquipos();
+  }, []);
 
   useEffect(() => {
     if (currentCliente) {
       setFormData({
         ...currentCliente,
         ClienteTipo: "MI", // Siempre forzar MI para edición también
+        EquipoId: currentCliente.EquipoId ? String(currentCliente.EquipoId) : "",
       });
     } else {
       setFormData({
@@ -100,6 +120,7 @@ export default function CustomersList({
         ClienteSexo: "",
         UsuarioId: user?.id || "",
         ClienteCopa: 0,
+        EquipoId: "",
       });
     }
   }, [currentCliente, user]);
@@ -145,6 +166,32 @@ export default function CustomersList({
           ))}
         </div>
       ),
+    },
+    {
+      key: "EquipoNombre",
+      label: "Equipo",
+      render: (item: Cliente) => {
+        const equipo = equipos.find((e) => e.EquipoId == item.EquipoId);
+        if (!item.EquipoId) {
+          return <span className="text-gray-400">Sin equipo</span>;
+        }
+        return (
+          <div className="flex items-center gap-2">
+            {equipo?.EquipoLogo && (
+              <img
+                src={`data:image/png;base64,${equipo.EquipoLogo}`}
+                alt={equipo.EquipoNombre}
+                className="w-6 h-6 object-contain"
+              />
+            )}
+            <span>
+              {equipo?.EquipoNombre ||
+                item.EquipoNombre ||
+                `ID: ${item.EquipoId}`}
+            </span>
+          </div>
+        );
+      },
     },
     { key: "ClienteSexo", label: "Sexo" },
     { key: "ClienteCategoria", label: "Categoría" },
@@ -355,6 +402,37 @@ export default function CustomersList({
                       <option value="7">7</option>
                       <option value="8">8</option>
                       <option value="INICIAL">INICIAL</option>
+                    </select>
+                  </div>
+                  <div className="col-span-6 sm:col-span-3">
+                    <label
+                      htmlFor="EquipoId"
+                      className="block mb-2 text-sm font-medium text-gray-900"
+                    >
+                      Equipo
+                    </label>
+                    <select
+                      name="EquipoId"
+                      id="EquipoId"
+                      value={
+                        formData.EquipoId == null ? "" : String(formData.EquipoId)
+                      }
+                      onChange={handleInputChange}
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                    >
+                      <option value="">Sin equipo</option>
+                      {equipos
+                        .filter(
+                          (equipo) =>
+                            equipo.EquipoEstado ||
+                            String(equipo.EquipoId) ===
+                              String(formData.EquipoId)
+                        )
+                        .map((equipo) => (
+                          <option key={equipo.EquipoId} value={equipo.EquipoId}>
+                            {equipo.EquipoNombre}
+                          </option>
+                        ))}
                     </select>
                   </div>
                   <div className="col-span-6 sm:col-span-3">

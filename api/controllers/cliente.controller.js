@@ -116,6 +116,21 @@ exports.createCliente = async (req, res) => {
       }
       clienteCopa = n;
     }
+    // Validación de EquipoId (opcional: entero o null)
+    let equipoId = null;
+    if (req.body.EquipoId !== undefined && req.body.EquipoId !== null) {
+      const v = String(req.body.EquipoId).trim();
+      if (v !== "") {
+        const n = Number(v);
+        if (!Number.isInteger(n) || n <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: "EquipoId debe ser un entero válido",
+          });
+        }
+        equipoId = n;
+      }
+    }
     // Crear el nuevo cliente
     const nuevoCliente = await Cliente.create({
       ClienteRUC: req.body.ClienteRUC || "",
@@ -128,6 +143,7 @@ exports.createCliente = async (req, res) => {
       UsuarioId: req.body.UsuarioId,
       ClienteSexo: sexo,
       ClienteCopa: clienteCopa,
+      EquipoId: equipoId,
     });
     res.status(201).json({
       success: true,
@@ -178,6 +194,23 @@ exports.updateCliente = async (req, res) => {
         });
       }
       clienteData.ClienteCopa = n;
+    }
+    // Validación de EquipoId si viene en el payload ('' o null = sin equipo)
+    if (clienteData.EquipoId !== undefined) {
+      const v =
+        clienteData.EquipoId === null ? "" : String(clienteData.EquipoId).trim();
+      if (v === "") {
+        clienteData.EquipoId = null;
+      } else {
+        const n = Number(v);
+        if (!Number.isInteger(n) || n <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: "EquipoId debe ser un entero válido",
+          });
+        }
+        clienteData.EquipoId = n;
+      }
     }
     const updatedCliente = await Cliente.update(id, clienteData);
     if (!updatedCliente) {

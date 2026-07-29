@@ -13,5 +13,11 @@ router.get(
   authMiddleware,
   rankingController.getRankingCompetencia
 );
+router.get("/equipos", authMiddleware, rankingController.getRankingEquipos);
+router.get(
+  "/equipos/competencia",
+  authMiddleware,
+  rankingController.getRankingEquiposCompetencia
+);
 
 module.exports = router;

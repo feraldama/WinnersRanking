@@ -1,50 +1,50 @@
 import { useState, useEffect } from "react";
 import { getCompetencias } from "../../services/competencia.service";
 import {
-  getRankingGlobal,
-  getRankingCompetencia,
+  getRankingEquipos,
+  getRankingEquiposCompetencia,
 } from "../../services/ranking.service";
-import type { JugadorRanking } from "../../services/ranking.service";
+import type { EquipoRanking } from "../../services/ranking.service";
 import type { Equipo } from "../../services/equipo.service";
 
-interface RankingTableProps {
+interface RankingEquiposTableProps {
   title: string;
   loading?: boolean;
-  showSubTorneos?: boolean;
+  /** Si es true muestra el selector de competencia y filtra por sus fechas */
+  porCompetencia?: boolean;
   /** Lo trae el Dashboard una sola vez: sirve para resolver los logos */
   equipos?: Equipo[];
   onFilterChange?: (categoria: string, sexo: string) => void;
 }
 
-export default function RankingTable({
+export default function RankingEquiposTable({
   title,
   loading = false,
-  showSubTorneos = false,
+  porCompetencia = false,
   equipos = [],
   onFilterChange,
-}: RankingTableProps) {
+}: RankingEquiposTableProps) {
   const [categoria, setCategoria] = useState("8");
   const [sexo, setSexo] = useState("M");
   const [competencias, setCompetencias] = useState<
     { CompetenciaId: string | number; CompetenciaNombre: string }[]
   >([]);
   const [competenciaSeleccionada, setCompetenciaSeleccionada] = useState("");
-  const [jugadores, setJugadores] = useState<JugadorRanking[]>([]);
+  const [filas, setFilas] = useState<EquipoRanking[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (!porCompetencia) return;
     const loadCompetencias = async () => {
       try {
-        // Obtener todas las competencias ordenadas por ID descendente (última primero)
         const response = await getCompetencias({
           sortBy: "CompetenciaId",
           sortOrder: "desc",
-          limit: 1000, // Límite alto para obtener todas las competencias
+          limit: 1000,
         });
         const competenciasList = response.data || [];
         setCompetencias(competenciasList);
         if (competenciasList.length > 0) {
-          // Seleccionar la última competencia cargada (primera en la lista ordenada por ID DESC)
           setCompetenciaSeleccionada(competenciasList[0].CompetenciaId);
         }
       } catch (error) {
@@ -52,34 +52,32 @@ export default function RankingTable({
       }
     };
     loadCompetencias();
-  }, []);
+  }, [porCompetencia]);
 
-  // Cargar datos de ranking
   useEffect(() => {
     const loadRanking = async () => {
+      // Si es por competencia hay que esperar a tener una seleccionada
+      if (porCompetencia && !competenciaSeleccionada) return;
       setIsLoading(true);
       try {
-        let data: JugadorRanking[];
-        if (title.includes("Competencia") && competenciaSeleccionada) {
-          data = await getRankingCompetencia(
-            competenciaSeleccionada,
-            categoria,
-            sexo
-          );
-        } else {
-          data = await getRankingGlobal(categoria, sexo);
-        }
-        setJugadores(data);
+        const data = porCompetencia
+          ? await getRankingEquiposCompetencia(
+              competenciaSeleccionada,
+              categoria,
+              sexo
+            )
+          : await getRankingEquipos(categoria, sexo);
+        setFilas(data);
       } catch (error) {
-        console.error("Error al cargar ranking:", error);
-        setJugadores([]);
+        console.error("Error al cargar ranking de equipos:", error);
+        setFilas([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadRanking();
-  }, [categoria, sexo, competenciaSeleccionada, title]);
+  }, [categoria, sexo, competenciaSeleccionada, porCompetencia]);
 
   const handleCategoriaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newCategoria = e.target.value;
@@ -104,12 +102,8 @@ export default function RankingTable({
     return "w-6 h-6 text-xs";
   };
 
-  const getLogo = (equipoId?: string | number | null) => {
-    if (!equipoId) return undefined;
-    return equipos.find((e) => e.EquipoId == equipoId)?.EquipoLogo;
-  };
-
-  const totalColumnas = showSubTorneos ? 8 : 7;
+  const getLogo = (equipoId: string | number) =>
+    equipos.find((e) => e.EquipoId == equipoId)?.EquipoLogo;
 
   if (loading || isLoading) {
     return (
@@ -160,7 +154,7 @@ export default function RankingTable({
           </select>
         </div>
 
-        {title.includes("Competencia") && (
+        {porCompetencia && (
           <div className="flex flex-col">
             <label className="text-sm font-medium text-gray-700 mb-1">
               Competencia
@@ -183,16 +177,16 @@ export default function RankingTable({
         )}
       </div>
 
-      {/* Tabla de ranking */}
+      {/* Tabla de ranking por equipo */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200">
               <th className="text-left py-3 px-4 font-medium text-gray-700">
-                Pos. Jugador
+                Pos. Equipo
               </th>
-              <th className="text-left py-3 px-4 font-medium text-gray-700">
-                Equipo
+              <th className="text-center py-3 px-4 font-medium text-gray-700">
+                Jug.
               </th>
               <th className="text-center py-3 px-4 font-medium text-gray-700">
                 PJ
@@ -207,31 +201,23 @@ export default function RankingTable({
                 PTS
               </th>
               <th className="text-center py-3 px-4 font-medium text-gray-700">
-                Racha
+                Prom.
               </th>
-              {showSubTorneos && (
-                <th className="text-center py-3 px-4 font-medium text-gray-700">
-                  SubT.
-                </th>
-              )}
             </tr>
           </thead>
           <tbody>
-            {jugadores.length === 0 ? (
+            {filas.length === 0 ? (
               <tr>
-                <td
-                  colSpan={totalColumnas}
-                  className="text-center py-8 text-gray-500"
-                >
+                <td colSpan={7} className="text-center py-8 text-gray-500">
                   No hay datos disponibles
                 </td>
               </tr>
             ) : (
-              jugadores.map((jugador, index) => {
-                const logo = getLogo(jugador.equipoId);
+              filas.map((equipo, index) => {
+                const logo = getLogo(equipo.id);
                 return (
                   <tr
-                    key={jugador.id}
+                    key={equipo.id}
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
                     <td className="py-3 px-4">
@@ -245,66 +231,40 @@ export default function RankingTable({
                         >
                           {index + 1}
                         </div>
+                        {logo && (
+                          <img
+                            src={`data:image/png;base64,${logo}`}
+                            alt={equipo.nombre}
+                            className="w-7 h-7 object-contain"
+                          />
+                        )}
                         <span className="font-medium text-gray-800">
-                          {jugador.nombre}
+                          {equipo.nombre}
                         </span>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
-                      {jugador.equipoNombre ? (
-                        <div className="flex items-center space-x-2">
-                          {logo && (
-                            <img
-                              src={`data:image/png;base64,${logo}`}
-                              alt={jugador.equipoNombre}
-                              className="w-6 h-6 object-contain"
-                            />
-                          )}
-                          <span className="text-sm text-gray-700">
-                            {jugador.equipoNombre}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">Sin equipo</span>
-                      )}
+                    <td className="py-3 px-4 text-center text-sm text-gray-700">
+                      {equipo.jugadores}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className="inline-block bg-blue-500 text-white px-3 py-1 rounded-md text-sm font-medium">
-                        {jugador.partidosJugados}
+                        {equipo.partidosJugados}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center text-sm font-medium text-green-600">
-                      {jugador.ganados}
+                      {equipo.ganados}
                     </td>
                     <td className="py-3 px-4 text-center text-sm font-medium text-red-600">
-                      {jugador.perdidos}
+                      {equipo.perdidos}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className="inline-block bg-green-500 text-white px-3 py-1 rounded-md text-sm font-medium">
-                        {jugador.puntos}
+                        {equipo.puntos}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-center text-sm">
-                      {jugador.racha > 1 ? (
-                        <span
-                          className="font-medium text-orange-600"
-                          title={`${jugador.racha} victorias seguidas`}
-                        >
-                          🔥{jugador.racha}
-                        </span>
-                      ) : jugador.racha === 1 ? (
-                        <span className="text-gray-700">1</span>
-                      ) : (
-                        <span className="text-gray-400">–</span>
-                      )}
+                    <td className="py-3 px-4 text-center text-sm text-gray-700">
+                      {equipo.promedio}
                     </td>
-                    {showSubTorneos && (
-                      <td className="py-3 px-4 text-center">
-                        <span className="inline-block bg-blue-500 text-white px-3 py-1 rounded-md text-sm font-medium">
-                          {jugador.subTorneos || 0}
-                        </span>
-                      </td>
-                    )}
                   </tr>
                 );
               })
@@ -313,9 +273,9 @@ export default function RankingTable({
         </table>
       </div>
       <p className="mt-4 text-xs text-gray-500">
-        PJ: Partidos Jugados. G: Ganados. P: Perdidos. PTS: Puntos (3 por
-        ganado, 1 por perdido). Racha: victorias seguidas contando desde el
-        último partido.
+        Suma los puntos de los jugadores del equipo que cumplen la categoría y
+        sexo seleccionados. Jug.: jugadores con actividad. Prom.: puntos por
+        jugador.
       </p>
     </div>
   );

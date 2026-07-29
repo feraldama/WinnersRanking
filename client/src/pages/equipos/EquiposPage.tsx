@@ -1,31 +1,23 @@
 import { useEffect, useState, useCallback } from "react";
 import {
-  getClientes,
-  deleteCliente,
-  searchClientes,
-  createCliente,
-  updateCliente,
-} from "../../services/clientes.service";
-import CustomersList from "../../components/customers/CustomersList";
+  getEquiposPaginated,
+  deleteEquipo,
+  searchEquipos,
+  createEquipo,
+  updateEquipo,
+} from "../../services/equipo.service";
+import EquiposList from "../../components/equipos/EquiposList";
 import Pagination from "../../components/common/Pagination";
 import Swal from "sweetalert2";
 import { usePermiso } from "../../hooks/usePermiso";
 
-interface Cliente {
+interface Equipo {
   id: string | number;
-  ClienteId: string;
-  ClienteRUC: string;
-  ClienteNombre: string;
-  ClienteApellido: string;
-  ClienteDireccion: string;
-  ClienteTelefono: string;
-  ClienteTipo: string;
-  ClienteCategoria: string;
-  ClienteSexo?: "M" | "F" | "";
-  UsuarioId: string;
-  ClienteCopa?: number;
-  EquipoId?: string | number | null;
-  EquipoNombre?: string | null;
+  EquipoId: string | number;
+  EquipoNombre: string;
+  EquipoLogo?: string;
+  EquipoEstado: boolean;
+  EquipoJugadores?: number;
   [key: string]: unknown;
 }
 
@@ -35,33 +27,33 @@ interface Pagination {
   [key: string]: unknown;
 }
 
-export default function CustomersPage() {
-  const [clientesData, setClientesData] = useState<{
-    clientes: Cliente[];
+export default function EquiposPage() {
+  const [equiposData, setEquiposData] = useState<{
+    equipos: Equipo[];
     pagination: Pagination;
-  }>({ clientes: [], pagination: { totalItems: 0, totalPages: 1 } });
+  }>({ equipos: [], pagination: { totalItems: 0, totalPages: 1 } });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentCliente, setCurrentCliente] = useState<Cliente | null>(null);
+  const [currentEquipo, setCurrentEquipo] = useState<Equipo | null>(null);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortKey, setSortKey] = useState<string | undefined>();
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  const puedeCrear = usePermiso("CLIENTES", "crear");
-  const puedeEditar = usePermiso("CLIENTES", "editar");
-  const puedeEliminar = usePermiso("CLIENTES", "eliminar");
-  const puedeLeer = usePermiso("CLIENTES", "leer");
+  const puedeCrear = usePermiso("EQUIPOS", "crear");
+  const puedeEditar = usePermiso("EQUIPOS", "editar");
+  const puedeEliminar = usePermiso("EQUIPOS", "eliminar");
+  const puedeLeer = usePermiso("EQUIPOS", "leer");
 
-  const fetchClientes = useCallback(async () => {
+  const fetchEquipos = useCallback(async () => {
     try {
       setLoading(true);
       let data;
       if (appliedSearchTerm) {
-        data = await searchClientes(
+        data = await searchEquipos(
           appliedSearchTerm,
           currentPage,
           itemsPerPage,
@@ -69,10 +61,15 @@ export default function CustomersPage() {
           sortOrder
         );
       } else {
-        data = await getClientes(currentPage, itemsPerPage, sortKey, sortOrder);
+        data = await getEquiposPaginated(
+          currentPage,
+          itemsPerPage,
+          sortKey,
+          sortOrder
+        );
       }
-      setClientesData({
-        clientes: data.data,
+      setEquiposData({
+        equipos: data.data,
         pagination: data.pagination,
       });
     } catch (err) {
@@ -87,8 +84,8 @@ export default function CustomersPage() {
   }, [currentPage, appliedSearchTerm, itemsPerPage, sortKey, sortOrder]);
 
   useEffect(() => {
-    fetchClientes();
-  }, [fetchClientes]);
+    fetchEquipos();
+  }, [fetchEquipos]);
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
@@ -105,7 +102,7 @@ export default function CustomersPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string | number) => {
     Swal.fire({
       title: "¿Estás seguro?",
       text: "¡No podrás revertir esto!",
@@ -118,20 +115,15 @@ export default function CustomersPage() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await deleteCliente(id);
+          await deleteEquipo(id);
           Swal.fire({
             icon: "success",
-            title: "Cliente eliminado exitosamente",
+            title: "Equipo eliminado exitosamente",
           });
-          setClientesData((prev) => ({
-            ...prev,
-            clientes: prev.clientes.filter(
-              (cliente) => cliente.ClienteId !== id
-            ),
-          }));
+          fetchEquipos();
         } catch (error: unknown) {
           const err = error as { message?: string };
-          const msg = err?.message || "No se pudo eliminar el cliente";
+          const msg = err?.message || "No se pudo eliminar el equipo";
           Swal.fire({
             icon: "warning",
             title: "No permitido",
@@ -143,33 +135,29 @@ export default function CustomersPage() {
   };
 
   const handleCreate = () => {
-    setCurrentCliente(null);
+    setCurrentEquipo(null);
     setIsModalOpen(true);
   };
 
-  const handleEdit = (cliente: Cliente) => {
-    setCurrentCliente(cliente);
+  const handleEdit = (equipo: Equipo) => {
+    setCurrentEquipo(equipo);
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (clienteData: Cliente) => {
+  const handleSubmit = async (equipoData: Equipo) => {
     let mensaje = "";
     try {
-      // Normalizar ClienteSexo para API: '' -> undefined (no enviar) o null
       const payload = {
-        ...clienteData,
-        ClienteSexo:
-          clienteData.ClienteSexo === "" ||
-          clienteData.ClienteSexo === undefined
-            ? undefined
-            : clienteData.ClienteSexo,
-      } as Cliente;
-      if (currentCliente) {
-        await updateCliente(currentCliente.ClienteId, payload);
-        mensaje = "Cliente actualizado exitosamente";
+        EquipoNombre: equipoData.EquipoNombre,
+        EquipoLogo: equipoData.EquipoLogo || "",
+        EquipoEstado: equipoData.EquipoEstado,
+      };
+      if (currentEquipo) {
+        await updateEquipo(currentEquipo.EquipoId, payload);
+        mensaje = "Equipo actualizado exitosamente";
       } else {
-        const response = await createCliente(payload);
-        mensaje = response.message || "Cliente creado exitosamente";
+        const response = await createEquipo(payload);
+        mensaje = response.message || "Equipo creado exitosamente";
       }
       setIsModalOpen(false);
       Swal.fire({
@@ -179,13 +167,14 @@ export default function CustomersPage() {
         showConfirmButton: false,
         timer: 2000,
       });
-      fetchClientes();
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("Error desconocido");
-      }
+      fetchEquipos();
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err?.message || "No se pudo guardar el equipo",
+      });
     }
   };
 
@@ -198,32 +187,30 @@ export default function CustomersPage() {
     setCurrentPage(1);
   };
 
-  if (loading) return <div>Cargando clientes...</div>;
+  if (loading) return <div>Cargando equipos...</div>;
   if (error) return <div>Error: {error}</div>;
-  if (!puedeLeer) return <div>No tienes permiso para ver los clientes</div>;
+  if (!puedeLeer) return <div>No tienes permiso para ver los equipos</div>;
 
   return (
     <div className="container mx-auto px-4">
-      <h1 className="text-2xl font-medium mb-3">Gestión de Jugadores</h1>
-      <CustomersList
-        clientes={clientesData.clientes.map((c) => ({ ...c, id: c.ClienteId }))}
+      <h1 className="text-2xl font-medium mb-3">Gestión de Equipos</h1>
+      <EquiposList
+        equipos={equiposData.equipos.map((e) => ({ ...e, id: e.EquipoId }))}
         onDelete={
-          puedeEliminar
-            ? (cliente) => handleDelete(cliente.ClienteId)
-            : undefined
+          puedeEliminar ? (equipo) => handleDelete(equipo.EquipoId) : undefined
         }
         onEdit={puedeEditar ? handleEdit : undefined}
         onCreate={puedeCrear ? handleCreate : undefined}
-        pagination={clientesData.pagination}
+        pagination={equiposData.pagination}
         onSearch={handleSearch}
         searchTerm={searchTerm}
         onKeyPress={handleKeyPress}
         onSearchSubmit={applySearch}
         isModalOpen={isModalOpen}
         onCloseModal={() => setIsModalOpen(false)}
-        currentCliente={
-          currentCliente
-            ? { ...currentCliente, id: currentCliente.ClienteId }
+        currentEquipo={
+          currentEquipo
+            ? { ...currentEquipo, id: currentEquipo.EquipoId }
             : null
         }
         onSubmit={handleSubmit}
@@ -237,7 +224,7 @@ export default function CustomersPage() {
       />
       <Pagination
         currentPage={currentPage}
-        totalPages={clientesData.pagination.totalPages}
+        totalPages={equiposData.pagination.totalPages}
         onPageChange={handlePageChange}
         itemsPerPage={itemsPerPage}
         onItemsPerPageChange={handleItemsPerPageChange}

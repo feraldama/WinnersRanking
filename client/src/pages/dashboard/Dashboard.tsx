@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/useAuth";
 import { Link } from "react-router-dom";
 import {
@@ -7,9 +8,27 @@ import {
   Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
 import RankingTable from "../../components/dashboard/RankingTable";
+import RankingEquiposTable from "../../components/dashboard/RankingEquiposTable";
+import { getEquipos } from "../../services/equipo.service";
+import type { Equipo } from "../../services/equipo.service";
 
 function Dashboard() {
   const { user } = useAuth();
+  const [equipos, setEquipos] = useState<Equipo[]>([]);
+
+  // Una sola carga para las cuatro tablas: los logos vienen en base64 y no
+  // tiene sentido que cada tabla pida la misma lista por separado.
+  useEffect(() => {
+    const loadEquipos = async () => {
+      try {
+        const response = await getEquipos();
+        setEquipos(response.data || []);
+      } catch (error) {
+        console.error("Error al cargar equipos:", error);
+      }
+    };
+    loadEquipos();
+  }, []);
 
   return (
     <main className="py-6 px-6 space-y-12 bg-gray-100 w-full">
@@ -30,8 +49,29 @@ function Dashboard() {
 
       {/* Sección de Rankings */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-        <RankingTable title="Ranking (Global)" showSubTorneos={true} />
-        <RankingTable title="Ranking (En Competencia)" showSubTorneos={false} />
+        <RankingTable
+          title="Ranking (Global)"
+          showSubTorneos={true}
+          equipos={equipos}
+        />
+        <RankingTable
+          title="Ranking (En Competencia)"
+          showSubTorneos={false}
+          equipos={equipos}
+        />
+      </section>
+
+      {/* Sección de Rankings por Equipo */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+        <RankingEquiposTable
+          title="Ranking por Equipo (Global)"
+          equipos={equipos}
+        />
+        <RankingEquiposTable
+          title="Ranking por Equipo (En Competencia)"
+          porCompetencia={true}
+          equipos={equipos}
+        />
       </section>
 
       {/* Sección de Navegación */}

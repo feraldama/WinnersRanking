@@ -29,6 +29,7 @@ const rankingRoutes = require("./routes/ranking.routes");
 const sucursalRoutes = require("./routes/sucursal.routes");
 const reporteRoutes = require("./routes/reporte.routes");
 const torneoRoutes = require("./routes/torneo.routes");
+const equipoRoutes = require("./routes/equipo.routes");
 // const productoRoutes = require("./routes/producto.routes"); // Ejemplo adicional
 
 const app = express();
@@ -74,6 +75,7 @@ app.use("/api/ranking", rankingRoutes);
 app.use("/api/sucursales", sucursalRoutes);
 app.use("/api/reportes", reporteRoutes);
 app.use("/api/torneos", torneoRoutes);
+app.use("/api/equipos", equipoRoutes);
 // app.use("/api/productos", productoRoutes); // Ejemplo adicional
 
 // Ruta de prueba

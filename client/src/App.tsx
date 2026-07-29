@@ -32,6 +32,7 @@ import CanchasPage from "./pages/canchas/CanchasPage";
 import CompetenciasPage from "./pages/competencias/CompetenciasPage";
 import TorneosPage from "./pages/torneos/TorneosPage";
 import SucursalesPage from "./pages/sucursales/SucursalesPage";
+import EquiposPage from "./pages/equipos/EquiposPage";
 
 function App() {
   return (
@@ -76,6 +77,7 @@ function App() {
             <Route path="/competencias" element={<CompetenciasPage />} />
             <Route path="/torneos" element={<TorneosPage />} />
             <Route path="/sucursales" element={<SucursalesPage />} />
+            <Route path="/equipos" element={<EquiposPage />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

@@ -22,6 +22,7 @@ import {
   // WrenchIcon,
   // LockClosedIcon,
   ChartBarIcon,
+  ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 import { Link, useLocation } from "react-router-dom";
 import type { Dispatch, SetStateAction } from "react";
@@ -86,6 +87,11 @@ const navigation: NavigationItem[] = [
     name: "Competencias",
     href: "/competencias",
     icon: <MegaphoneIcon className="h-7 w-6" />,
+  },
+  {
+    name: "Equipos",
+    href: "/equipos",
+    icon: <ShieldCheckIcon className="h-7 w-6" />,
   },
   {
     name: "Jugadores",
