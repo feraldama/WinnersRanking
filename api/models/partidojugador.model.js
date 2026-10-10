@@ -26,7 +26,7 @@ const PartidoJugador = {
   getByPartidoId: (partidoId) => {
     return new Promise((resolve, reject) => {
       db.query(
-        "SELECT pj.*, c.ClienteNombre, c.ClienteApellido FROM partidojugador pj LEFT JOIN clientes c ON pj.ClienteId = c.ClienteId WHERE pj.PartidoId = ?",
+        "SELECT pj.*, c.ClienteNombre, c.ClienteApellido FROM partidojugador pj LEFT JOIN clientes c ON pj.ClienteId = c.ClienteId WHERE pj.PartidoId = ? ORDER BY pj.PartidoJugadorId",
         [partidoId],
         (err, results) => {
           if (err) return reject(err);
@@ -62,7 +62,7 @@ const PartidoJugador = {
         : "ASC";
 
       db.query(
-        `SELECT pj.*, c.ClienteNombre, c.ClienteApellido FROM partidojugador pj LEFT JOIN clientes c ON pj.ClienteId = c.ClienteId ORDER BY pj.${sortField} ${order} LIMIT ? OFFSET ?`,
+        `SELECT pj.*, c.ClienteNombre, c.ClienteApellido FROM partidojugador pj LEFT JOIN clientes c ON pj.ClienteId = c.ClienteId ORDER BY pj.${sortField} ${order}, pj.PartidoId, pj.PartidoJugadorId LIMIT ? OFFSET ?`,
         [limit, offset],
         (err, results) => {
           if (err) return reject(err);
@@ -117,7 +117,7 @@ const PartidoJugador = {
         OR pj.PartidoJugadorPareja LIKE ?
         OR pj.PartidoJugadorResultado LIKE ?
         OR pj.PartidoJugadorObs LIKE ?
-        ORDER BY pj.${sortField} ${order}
+        ORDER BY pj.${sortField} ${order}, pj.PartidoId, pj.PartidoJugadorId
         LIMIT ? OFFSET ?
       `;
       const searchValue = `%${term}%`;

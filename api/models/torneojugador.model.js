@@ -45,7 +45,7 @@ const TorneoJugador = {
       const rolChar =
         rol === "CAMPEON" ? "C" : rol === "VICECAMPEON" ? "V" : rol;
       db.query(
-        "SELECT tj.*, c.ClienteNombre, c.ClienteApellido FROM torneojugador tj LEFT JOIN clientes c ON tj.ClienteId = c.ClienteId WHERE tj.TorneoId = ? AND tj.TorneoJugadorRol = ?",
+        "SELECT tj.*, c.ClienteNombre, c.ClienteApellido FROM torneojugador tj LEFT JOIN clientes c ON tj.ClienteId = c.ClienteId WHERE tj.TorneoId = ? AND tj.TorneoJugadorRol = ? ORDER BY tj.TorneoJugadorId",
         [torneoId, rolChar],
         (err, results) => {
           if (err) return reject(err);
@@ -79,7 +79,7 @@ const TorneoJugador = {
         : "ASC";
 
       db.query(
-        `SELECT tj.*, c.ClienteNombre, c.ClienteApellido FROM torneojugador tj LEFT JOIN clientes c ON tj.ClienteId = c.ClienteId ORDER BY tj.${sortField} ${order} LIMIT ? OFFSET ?`,
+        `SELECT tj.*, c.ClienteNombre, c.ClienteApellido FROM torneojugador tj LEFT JOIN clientes c ON tj.ClienteId = c.ClienteId ORDER BY tj.${sortField} ${order}, tj.TorneoId, tj.TorneoJugadorId LIMIT ? OFFSET ?`,
         [limit, offset],
         (err, results) => {
           if (err) return reject(err);
@@ -133,7 +133,7 @@ const TorneoJugador = {
         OR (tj.TorneoJugadorRol = 'V' AND ? LIKE '%VICECAMPEON%')
         OR tj.TorneoJugadorRol LIKE ?
         OR CONCAT(c.ClienteNombre, ' ', c.ClienteApellido) LIKE ?
-        ORDER BY tj.${sortField} ${order}
+        ORDER BY tj.${sortField} ${order}, tj.TorneoId, tj.TorneoJugadorId
         LIMIT ? OFFSET ?
       `;
       const searchValue = `%${term}%`;

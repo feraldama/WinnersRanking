@@ -189,11 +189,14 @@ exports.createTorneo = async (req, res) => {
     }
 
     // Obtener datos completos de los jugadores
-    const campeonesCompletos = await Promise.all(
-      campeonesCreados.map((c) => TorneoJugador.getById(c.TorneoJugadorId))
+    // (por torneo: TorneoJugadorId se repite en todos los torneos)
+    const campeonesCompletos = await TorneoJugador.getByTorneoIdAndRol(
+      nuevoTorneo.TorneoId,
+      "C"
     );
-    const vicecampeonesCompletos = await Promise.all(
-      vicecampeonesCreados.map((v) => TorneoJugador.getById(v.TorneoJugadorId))
+    const vicecampeonesCompletos = await TorneoJugador.getByTorneoIdAndRol(
+      nuevoTorneo.TorneoId,
+      "V"
     );
 
     // Preparar respuesta con jugadores incluidos

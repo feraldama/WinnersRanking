@@ -49,14 +49,14 @@ const Reporte = {
             (SUM(CASE 
               WHEN pj.PartidoJugadorResultado = 'G' THEN 1 
               ELSE 0 
-            END) / COUNT(DISTINCT pj.PartidoId)) * 100, 2
+            END) * 100.0 / NULLIF(COUNT(DISTINCT pj.PartidoId), 0)), 2
           ) as porcentajeVictorias
         FROM clientes c
         LEFT JOIN partidojugador pj ON c.ClienteId = pj.ClienteId
         LEFT JOIN partido p ON pj.PartidoId = p.PartidoId
         WHERE p.PartidoEstado = 1 ${whereSexo}
         GROUP BY c.ClienteId, c.ClienteNombre, c.ClienteApellido
-        HAVING totalPartidos > 0
+        HAVING COUNT(DISTINCT pj.PartidoId) > 0
         ORDER BY ${sortField} ${order}
         LIMIT ? OFFSET ?
       `;
@@ -141,7 +141,7 @@ const Reporte = {
             (SUM(CASE 
               WHEN pj.PartidoJugadorResultado = 'G' THEN 1 
               ELSE 0 
-            END) / COUNT(DISTINCT pj.PartidoId)) * 100, 2
+            END) * 100.0 / NULLIF(COUNT(DISTINCT pj.PartidoId), 0)), 2
           ) as porcentajeVictorias
         FROM clientes c
         LEFT JOIN partidojugador pj ON c.ClienteId = pj.ClienteId
@@ -151,7 +151,7 @@ const Reporte = {
              OR c.ClienteApellido LIKE ? 
              OR CONCAT(c.ClienteNombre, ' ', c.ClienteApellido) LIKE ?)
         GROUP BY c.ClienteId, c.ClienteNombre, c.ClienteApellido
-        HAVING totalPartidos > 0
+        HAVING COUNT(DISTINCT pj.PartidoId) > 0
         ORDER BY ${sortField} ${order}
         LIMIT ? OFFSET ?
       `;
@@ -216,7 +216,7 @@ const Reporte = {
             (SUM(CASE 
               WHEN pj.PartidoJugadorResultado = 'G' THEN 1 
               ELSE 0 
-            END) / COUNT(DISTINCT pj.PartidoId)) * 100, 2
+            END) * 100.0 / NULLIF(COUNT(DISTINCT pj.PartidoId), 0)), 2
           ) as porcentajeVictorias,
           MIN(DATE_FORMAT(p.PartidoFecha, '%d-%m-%Y')) as primerPartido,
           MAX(DATE_FORMAT(p.PartidoFecha, '%d-%m-%Y')) as ultimoPartido
@@ -243,11 +243,11 @@ const Reporte = {
           COUNT(DISTINCT pj.ClienteId) as totalJugadores,
           COUNT(DISTINCT CASE WHEN p.PartidoEstado = 1 THEN p.PartidoId END) as partidosFinalizados,
           COUNT(DISTINCT CASE WHEN p.PartidoEstado = 0 THEN p.PartidoId END) as partidosPendientes,
-          AVG(CASE 
+          ROUND(AVG(CASE 
             WHEN p.PartidoEstado = 1 THEN 
               (SELECT COUNT(*) FROM partidojugador pj2 WHERE pj2.PartidoId = p.PartidoId)
             ELSE NULL 
-          END) as promedioJugadoresPorPartido
+          END), 4) as promedioJugadoresPorPartido
         FROM partido p
         LEFT JOIN partidojugador pj ON p.PartidoId = pj.PartidoId
       `;

@@ -126,7 +126,7 @@ export default function PartidosList({
         setFormData({
           PartidoFecha: convertirFechaParaInput(currentPartido.PartidoFecha),
           PartidoHoraInicio: currentPartido.PartidoHoraInicio,
-          PartidoHoraFin: currentPartido.PartidoHoraFin,
+          PartidoHoraFin: currentPartido.PartidoHoraFin ?? "",
           PartidoCategoria: currentPartido.PartidoCategoria,
           PartidoEstado: Boolean(currentPartido.PartidoEstado),
           CanchaId: currentPartido.CanchaId?.toString() || "",

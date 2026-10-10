@@ -262,7 +262,7 @@ const Venta = {
           OR CAST(v.VentaCantidadProductos AS CHAR) = ?
           OR LOWER(COALESCE(u.UsuarioNombre, '')) LIKE LOWER(?)
           OR CAST(v.Total AS CHAR) = ?
-          OR LOWER(COALESCE(v.VentaEntrega, '')) LIKE LOWER(?)
+          OR LOWER(COALESCE(CAST(v.VentaEntrega AS CHAR), '')) LIKE LOWER(?)
         ORDER BY v.${sortField} ${order}
         LIMIT ? OFFSET ?
       `;
@@ -318,7 +318,7 @@ const Venta = {
             OR CAST(v.VentaCantidadProductos AS CHAR) = ?
             OR LOWER(COALESCE(u.UsuarioNombre, '')) LIKE LOWER(?)
             OR CAST(v.Total AS CHAR) = ?
-            OR LOWER(COALESCE(v.VentaEntrega, '')) LIKE LOWER(?)
+            OR LOWER(COALESCE(CAST(v.VentaEntrega AS CHAR), '')) LIKE LOWER(?)
         `;
 
         const countValues = [
@@ -373,7 +373,8 @@ const Venta = {
         params.push(localId);
       }
 
-      query += ` HAVING Saldo > 0 ORDER BY v.VentaFecha ASC`;
+      // Sin GROUP BY, el HAVING de MySQL filtraba como un WHERE sobre el alias
+      query += ` AND (v.Total - COALESCE(v.VentaEntrega, 0)) > 0 ORDER BY v.VentaFecha ASC`;
 
       db.query(query, params, (err, results) => {
         if (err) {
@@ -406,7 +407,7 @@ const Venta = {
         JOIN clientes c ON v.ClienteId = c.ClienteId
         WHERE v.VentaTipo = 'CR'
         GROUP BY c.ClienteId, c.ClienteNombre, c.ClienteApellido
-        HAVING Saldo > 0
+        HAVING SUM(v.Total - COALESCE(v.VentaEntrega,0)) > 0
         ORDER BY Cliente
       `;
       db.query(query, (err, results) => {

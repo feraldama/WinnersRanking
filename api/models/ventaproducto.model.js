@@ -134,7 +134,7 @@ const VentaProducto = {
         : "ASC";
 
       db.query(
-        `SELECT * FROM ventaproducto ORDER BY ${sortField} ${order} LIMIT ? OFFSET ?`,
+        `SELECT * FROM ventaproducto ORDER BY ${sortField} ${order}, VentaId, VentaProductoId LIMIT ? OFFSET ?`,
         [limit, offset],
         (err, results) => {
           if (err) return reject(err);
@@ -190,7 +190,7 @@ const VentaProducto = {
         OR CAST(VentaProductoPrecio AS CHAR) LIKE ?
         OR CAST(VentaProductoPrecioTotal AS CHAR) LIKE ?
         OR CAST(VentaProductoUnitario AS CHAR) LIKE ?
-        ORDER BY ${sortField} ${order}
+        ORDER BY ${sortField} ${order}, VentaId, VentaProductoId
         LIMIT ? OFFSET ?
       `;
 

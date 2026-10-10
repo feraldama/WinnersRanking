@@ -108,7 +108,7 @@ const queryRankingEquipos = (filtrarFechas) => `
       SUM(
         COALESCE(puntos_partidos.puntos, 0) +
         COALESCE(puntos_torneos.puntos, 0)
-      ) / COUNT(DISTINCT c.ClienteId),
+      ) * 1.0 / COUNT(DISTINCT c.ClienteId),
       1
     ) as promedio
   FROM Equipo e

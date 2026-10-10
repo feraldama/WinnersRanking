@@ -60,7 +60,7 @@ const RegistroDiarioCaja = {
         LEFT JOIN Caja c ON r.CajaId = c.CajaId
         LEFT JOIN TipoGasto t ON r.TipoGastoId = t.TipoGastoId
         LEFT JOIN tipogastogrupo tg ON r.TipoGastoId = tg.TipoGastoId AND r.TipoGastoGrupoId = tg.TipoGastoGrupoId
-        ORDER BY r.${sortField} ${order}
+        ORDER BY r.${sortField} ${order}, r.RegistroDiarioCajaId ${order}
         LIMIT ? OFFSET ?
       `;
 
@@ -131,7 +131,7 @@ const RegistroDiarioCaja = {
           OR CAST(r.TipoGastoGrupoId AS CHAR) LIKE ?
           OR CAST(r.RegistroDiarioCajaMonto AS CHAR) LIKE ?
           OR DATE_FORMAT(r.RegistroDiarioCajaFecha, '%d/%m/%Y %H:%i:%s') LIKE ?
-        ORDER BY r.${sortField} ${order}
+        ORDER BY r.${sortField} ${order}, r.RegistroDiarioCajaId ${order}
         LIMIT ? OFFSET ?
       `;
       const searchValue = `%${term}%`;

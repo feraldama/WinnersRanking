@@ -121,7 +121,7 @@ const VentaCreditoPago = {
         : "ASC";
 
       db.query(
-        `SELECT * FROM ventacreditopago ORDER BY ${sortField} ${order} LIMIT ? OFFSET ?`,
+        `SELECT * FROM ventacreditopago ORDER BY ${sortField} ${order}, VentaCreditoId, VentaCreditoPagoId LIMIT ? OFFSET ?`,
         [limit, offset],
         (err, results) => {
           if (err) return reject(err);
@@ -171,7 +171,7 @@ const VentaCreditoPago = {
         OR VentaCreditoPagoId LIKE ?
         OR VentaCreditoPagoFecha LIKE ?
         OR CAST(VentaCreditoPagoMonto AS CHAR) LIKE ?
-        ORDER BY ${sortField} ${order}
+        ORDER BY ${sortField} ${order}, VentaCreditoId, VentaCreditoPagoId
         LIMIT ? OFFSET ?
       `;
 
